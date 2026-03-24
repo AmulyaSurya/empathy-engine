@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empathy Engine - Emotional AI Voice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .emotion-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .emotion-happy { background: #ffd700; color: #856404; }
+        .emotion-excited { background: #ff9800; color: #fff; }
+        .emotion-neutral { background: #9e9e9e; color: white; }
+        .emotion-sad { background: #2196f3; color: white; }
+        .emotion-frustrated { background: #f44336; color: white; }
+        .emotion-inquisitive { background: #4caf50; color: white; }
+        .emotion-calm { background: #00bcd4; color: white; }
+        
+        audio {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Empathy Engine</h1>
+        <p class="subtitle">Giving AI a Human Voice with Emotional Intelligence</p>
+        
+        <textarea id="textInput" rows="5" placeholder="Enter your text here... Try something like:
+- 'I am so happy today! This is amazing news!'
+- 'I'm really frustrated, this isn't working at all.'
+- 'Why does this keep happening?'"></textarea>
+        
+        <button id="generateBtn" onclick="generateSpeech()">Generate Emotional Speech 🎵</button>
+        
+        <div id="result" class="result">
+            <div id="emotionDisplay" class="emotion-badge"></div>
+            <audio id="audioPlayer" controls></audio>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">Processing with emotional intelligence...</div>
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+    
+    <script>
+        async function generateSpeech() {
+            const text = document.getElementById('textInput').value.trim();
+            
+            if (!text) {
+                showError('Please enter some text');
+                return;
+            }
+            
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            
+            generateBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const emotion = data.emotion;
+                    const emotionDisplay = document.getElementById('emotionDisplay');
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    
+                    // Update emotion badge
+                    emotionDisplay.textContent = `Detected Emotion: ${emotion.toUpperCase()}`;
+                    emotionDisplay.className = `emotion-badge emotion-${emotion}`;
+                    
+                    // Load audio
+                    audioPlayer.src = `/audio/${data.audio_file}`;
+                    audioPlayer.load();
+                    
+                    result.style.display = 'block';
+                } else {
+                    showError(data.error || 'Failed to generate speech');
+                }
+            } catch (err) {
+                showError('Network error: ' + err.message);
+            } finally {
+                generateBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+            setTimeout(() => {
+                error.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
